@@ -1,14 +1,27 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
 
 const app = express();
+app.use(cors()); // Enable CORS
+
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*", // Allow all origins for now, you can restrict this to your frontend domain
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 const usersInRooms = {}; // Object to keep track of users in each room
 const userSockets = {}; // Map usernames to their socket IDs
+
+// Serve a simple message at the root URL for testing
+app.get('/', (req, res) => {
+  res.send('Backend server is running');
+});
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
@@ -36,7 +49,7 @@ io.on('connection', (socket) => {
     usersInRooms[roomName].add(username);
     userSockets[username] = socket.id; // Map the username to the socket ID
 
-    io.to(roomName).emit('roomUsers', Array.from(usersInRooms[roomName]));
+    io.to(roomName).emit('roomUsers', Array.from(usersInRooms[joinedRoom]));
 
     console.log(`User ${username} joined room: ${roomName}`);
   });
